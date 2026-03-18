@@ -1,0 +1,73 @@
+---
+import '../styles/global.css';
+
+import SEO from '@/components/SEO.astro';
+import { getTranslator } from '@/i18n/server';
+
+interface Props {
+  title: string;
+  description: string;
+  canonical?: string;
+}
+
+const { title, description, canonical } = Astro.props;
+const { lang } = getTranslator(Astro.url);
+---
+
+<!doctype html>
+<html lang={lang}>
+  <head>
+    <SEO title={title} canonical={canonical} description={description} />
+  </head>
+  <body class="bg-white text-black antialiased">
+    <slot />
+  </body>
+</html>
+
+<style is:global>
+  /* ViewTransition API - Transiciones suaves entre idiomas */
+  ::view-transition-old(root) {
+    animation: slide-out 0.3s ease-in-out;
+  }
+  ::view-transition-new(root) {
+    animation: slide-in 0.3s ease-in-out;
+  }
+
+  @keyframes slide-out {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+    }
+  }
+
+  @keyframes slide-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+</style>
+
+<script>
+  // ViewTransition API - Transiciones suaves al cambiar idioma
+  if (document.startViewTransition) {
+    document.addEventListener('click', (e) => {
+      const target = e.target as HTMLElement;
+      const link = target.closest('[data-lang]');
+
+      if (link instanceof HTMLAnchorElement) {
+        e.preventDefault();
+        const href = link.getAttribute('href');
+        if (href) {
+          document.startViewTransition(() => {
+            window.location.href = href;
+          });
+        }
+      }
+    });
+  }
+</script>

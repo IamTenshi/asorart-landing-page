@@ -1,0 +1,103 @@
+---
+import { getTranslator } from '@/i18n/server';
+import { languages, defaultLang } from '@/i18n/utils';
+
+interface Props {
+  title: string;
+  description: string;
+  canonical?: string;
+  image?: string;
+}
+
+const {
+  title,
+  description,
+  canonical,
+  image = './favicon/favicon.ico',
+} = Astro.props as Props;
+
+const { t, lang } = getTranslator(Astro.url);
+
+const determineCanonicalURL = () => {
+  if (Astro.url.host.includes('localhost')) return 'http://localhost:4321';
+  return canonical || Astro.url.pathname;
+};
+
+const canonicalURL = new URL(determineCanonicalURL(), Astro.site);
+
+const base = Astro.site ?? new URL(Astro.url.origin);
+
+const getAlternateUrl = (targetLang: string) => {
+  const path = Astro.url.pathname;
+
+  // quitar prefijo de idioma si existe
+  const cleanPath = path.replace(/^\/(es|en)/, '');
+
+  if (targetLang === defaultLang) {
+    return new URL(cleanPath || '/', base);
+  }
+
+  return new URL(`/${targetLang}${cleanPath}`, base);
+};
+---
+
+<title>{title}</title>
+
+<meta charset="UTF-8" />
+<meta name="description" content={description} />
+
+<link rel="canonical" href={canonicalURL} />
+
+{
+  Object.keys(languages).map((lng) => (
+    <link rel="alternate" hreflang={lng} href={getAlternateUrl(lng)} />
+  ))
+}
+
+<link
+  rel="alternate"
+  hreflang="x-default"
+  href={getAlternateUrl(defaultLang)}
+/>
+
+<meta name="viewport" content="width=device-width" />
+<meta name="theme-color" content="#02010A" />
+
+<meta name="keywords" content={t('seo.keywords')} />
+
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:site" content={t('seo.twitter_site')} />
+<meta name="twitter:title" content={title} />
+<meta name="twitter:description" content={description} />
+<meta name="twitter:image" content={new URL(image, Astro.url)} />
+
+<meta property="og:image" content={new URL(image, Astro.url)} />
+<meta property="og:title" content={title} />
+<meta property="og:description" content={description} />
+<meta property="og:url" content={Astro.url} />
+<meta property="og:site_name" content={t('seo.site_name')} />
+<meta property="og:type" content="website" />
+<meta property="og:locale" content={t('seo.locale')} />
+
+<meta name="robots" content="index, follow" />
+<meta name="googlebot" content="index, follow" />
+
+<link
+  rel="apple-touch-icon"
+  sizes="180x180"
+  href="/favicon/apple-touch-icon.png"
+/>
+<link
+  rel="icon"
+  type="image/png"
+  sizes="32x32"
+  href="/favicon/favicon-32x32.png"
+/>
+<link
+  rel="icon"
+  type="image/png"
+  sizes="16x16"
+  href="/favicon/favicon-16x16.png"
+/>
+<meta name="apple-mobile-web-app-title" content="AsorArt" />
+<link rel="manifest" href="/favicon/site.webmanifest" />
