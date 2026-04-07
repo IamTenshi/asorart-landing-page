@@ -1,43 +1,78 @@
 ---
 import { getTranslator } from '@/i18n/server';
-import { languages, defaultLang } from '@/i18n/utils';
+import {
+  defaultLang,
+  getLocalizedUrl,
+  languages,
+  useTranslations,
+} from '@/i18n/utils';
 
 interface Props {
   title: string;
   description: string;
   canonical?: string;
   image?: string;
+  imageAlt?: string;
+  type?: 'website' | 'article';
+  noindex?: boolean;
 }
 
 const {
   title,
   description,
   canonical,
-  image = './favicon/favicon.ico',
+  image = '/favicon/android-chrome-512x512.png',
+  imageAlt,
+  type = 'website',
+  noindex = false,
 } = Astro.props as Props;
 
 const { t, lang } = getTranslator(Astro.url);
+const siteUrl = Astro.site ?? import.meta.env.PUBLIC_SITE_URL ?? Astro.url.origin;
+const baseUrl = new URL(siteUrl);
 
-const determineCanonicalURL = () => {
-  if (Astro.url.host.includes('localhost')) return 'http://localhost:4321';
-  return canonical || Astro.url.pathname;
+const toAbsoluteUrl = (value: string) => new URL(value, baseUrl);
+const canonicalUrl = canonical ? toAbsoluteUrl(canonical) : toAbsoluteUrl(Astro.url.pathname);
+const socialImageUrl = toAbsoluteUrl(image);
+const socialImageAlt = imageAlt ?? t('seo.image_alt');
+const robotsContent = noindex ? 'noindex, nofollow' : 'index, follow';
+const localeAlternates = Object.keys(languages)
+  .filter((language) => language !== lang)
+  .map((language) => useTranslations(language as keyof typeof languages)('seo.locale'));
+const socialProfiles = [
+  t('seo.instagram_url'),
+  t('seo.tiktok_url'),
+].filter(Boolean);
+
+const websiteSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: t('seo.site_name'),
+  url: baseUrl.toString(),
+  inLanguage: t('seo.locale'),
+  description,
+  sameAs: socialProfiles,
 };
 
-const canonicalURL = new URL(determineCanonicalURL(), Astro.site);
-
-const base = Astro.site ?? new URL(Astro.url.origin);
-
-const getAlternateUrl = (targetLang: string) => {
-  const path = Astro.url.pathname;
-
-  // quitar prefijo de idioma si existe
-  const cleanPath = path.replace(/^\/(es|en)/, '');
-
-  if (targetLang === defaultLang) {
-    return new URL(cleanPath || '/', base);
-  }
-
-  return new URL(`/${targetLang}${cleanPath}`, base);
+const webPageSchema = {
+  '@context': 'https://schema.org',
+  '@type': type === 'article' ? 'Article' : 'WebPage',
+  name: title,
+  url: canonicalUrl.toString(),
+  description,
+  inLanguage: t('seo.locale'),
+  image: socialImageUrl.toString(),
+  isPartOf: {
+    '@type': 'WebSite',
+    name: t('seo.site_name'),
+    url: baseUrl.toString(),
+  },
+  author: {
+    '@type': 'Person',
+    name: t('seo.author_name'),
+    url: baseUrl.toString(),
+    sameAs: socialProfiles,
+  },
 };
 ---
 
@@ -45,19 +80,26 @@ const getAlternateUrl = (targetLang: string) => {
 
 <meta charset="UTF-8" />
 <meta name="description" content={description} />
+<meta name="author" content={t('seo.author_name')} />
+<meta name="robots" content={robotsContent} />
+<meta name="googlebot" content={robotsContent} />
 
-<link rel="canonical" href={canonicalURL} />
+<link rel="canonical" href={canonicalUrl} />
 
 {
   Object.keys(languages).map((lng) => (
-    <link rel="alternate" hreflang={lng} href={getAlternateUrl(lng)} />
+    <link
+      rel="alternate"
+      hreflang={lng}
+      href={toAbsoluteUrl(getLocalizedUrl(lng as keyof typeof languages, Astro.url))}
+    />
   ))
 }
 
 <link
   rel="alternate"
   hreflang="x-default"
-  href={getAlternateUrl(defaultLang)}
+  href={toAbsoluteUrl(getLocalizedUrl(defaultLang, Astro.url))}
 />
 
 <meta name="viewport" content="width=device-width" />
@@ -67,20 +109,25 @@ const getAlternateUrl = (targetLang: string) => {
 
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:site" content={t('seo.twitter_site')} />
+<meta name="twitter:creator" content={t('seo.twitter_creator')} />
 <meta name="twitter:title" content={title} />
 <meta name="twitter:description" content={description} />
-<meta name="twitter:image" content={new URL(image, Astro.url)} />
+<meta name="twitter:image" content={socialImageUrl} />
+<meta name="twitter:image:alt" content={socialImageAlt} />
 
-<meta property="og:image" content={new URL(image, Astro.url)} />
+<meta property="og:image" content={socialImageUrl} />
+<meta property="og:image:alt" content={socialImageAlt} />
 <meta property="og:title" content={title} />
 <meta property="og:description" content={description} />
-<meta property="og:url" content={Astro.url} />
+<meta property="og:url" content={canonicalUrl} />
 <meta property="og:site_name" content={t('seo.site_name')} />
-<meta property="og:type" content="website" />
+<meta property="og:type" content={type} />
 <meta property="og:locale" content={t('seo.locale')} />
-
-<meta name="robots" content="index, follow" />
-<meta name="googlebot" content="index, follow" />
+{
+  localeAlternates.map((locale) => (
+    <meta property="og:locale:alternate" content={locale} />
+  ))
+}
 
 <link
   rel="apple-touch-icon"
@@ -101,3 +148,5 @@ const getAlternateUrl = (targetLang: string) => {
 />
 <meta name="apple-mobile-web-app-title" content="AsorArt" />
 <link rel="manifest" href="/favicon/site.webmanifest" />
+<script type="application/ld+json" set:html={JSON.stringify(websiteSchema)} />
+<script type="application/ld+json" set:html={JSON.stringify(webPageSchema)} />

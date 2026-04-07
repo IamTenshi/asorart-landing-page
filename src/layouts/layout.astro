@@ -8,16 +8,26 @@ interface Props {
   title: string;
   description: string;
   canonical?: string;
+  image?: string;
+  imageAlt?: string;
+  noindex?: boolean;
 }
 
-const { title, description, canonical } = Astro.props;
+const { title, description, canonical, image, imageAlt, noindex } = Astro.props;
 const { lang } = getTranslator(Astro.url);
 ---
 
 <!doctype html>
 <html lang={lang}>
   <head>
-    <SEO title={title} canonical={canonical} description={description} />
+    <SEO
+      title={title}
+      canonical={canonical}
+      description={description}
+      image={image}
+      imageAlt={imageAlt}
+      noindex={noindex}
+    />
   </head>
   <body class="bg-white text-black antialiased">
     <slot />
