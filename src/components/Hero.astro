@@ -1,0 +1,37 @@
+---
+import { ScrollReveal } from './ScrollReveal';
+---
+
+<section
+  class="text-white px-4 py-20 lg:px-32 lg:py-20 flex items-start justify-end flex-col gap-4 h-screen bg-purple-500 bg-[url('../assets/images/hero-provisional.png')] bg-cover bg-center"
+>
+  <ScrollReveal
+    client:only="react"
+    delay={0}
+    direction="up"
+    distance={50}
+    className="z-10"
+  >
+    <h1 class="text-5xl font-bold font-inter">
+      <span class="mr-2 font-caveat text-7xl">Welcome</span> to AsorArt
+    </h1>
+  </ScrollReveal>
+  <div class="z-10 flex flex-wrap gap-x-6 gap-y-3">
+    <ScrollReveal client:only="react" delay={100} direction="up" distance={50}>
+      <a
+        href="#"
+        class="btn rounded-full border-none shadow-none font-bold text-lg px-5 bg-violet-500 hover:bg-violet-600 transition-colors text-white py-2.5 w-full sm:w-auto"
+        >View Portfolio</a
+      >
+    </ScrollReveal>
+    <ScrollReveal client:only="react" delay={150} direction="up" distance={50}>
+      <a
+        href="#"
+        class="btn rounded-full border-none shadow-none bg-white hover:bg-violet-100 transition-colors text-violet-900 hover:text-violet-600 px-5 py-2.5 font-bold text-lg w-full sm:w-auto"
+        >View Commissions</a
+      >
+    </ScrollReveal>
+  </div>
+  <div class="absolute inset-0 bg-linear-to-b from-transparent to-slate-950/80">
+  </div>
+</section>
